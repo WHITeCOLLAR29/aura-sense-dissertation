@@ -16,7 +16,7 @@ import os
 os.environ.setdefault("TF_CPP_MIN_LOG_LEVEL", "3")
 
 import streamlit as st
-from streamlit_webrtc import RTCConfiguration, WebRtcMode, get_cloudflare_ice_servers, webrtc_streamer
+from streamlit_webrtc import RTCConfiguration, WebRtcMode, webrtc_streamer
 
 from aurasense.config import PASTEL_PALETTES
 from aurasense.evaluation import load_cached_indian_benchmark
@@ -45,39 +45,18 @@ st.set_page_config(
 )
 
 
-@st.cache_data(ttl=3600, show_spinner=False)
-def _fetch_cloudflare_ice(key_id: str, api_token: str):
-    return get_cloudflare_ice_servers(turn_key_id=key_id, turn_key_api_token=api_token)
-
-
 def _build_rtc_configuration() -> tuple[RTCConfiguration, str]:
-    """Builds ICE configuration using Cloudflare TURN (from `st.secrets`) + STUN fallback."""
-    try:
-        cf_id = st.secrets.get("CLOUDFLARE_TURN_KEY_ID")
-        cf_tok = st.secrets.get("CLOUDFLARE_TURN_KEY_API_TOKEN")
-        if cf_id and cf_tok:
-            ice_servers = _fetch_cloudflare_ice(str(cf_id), str(cf_tok))
-            return RTCConfiguration({"iceServers": ice_servers}), "Cloudflare TURN + STUN"
-    except Exception as exc:
-        st.session_state["webrtc_turn_error"] = str(exc)
-
-    ice_servers = [{"urls": ["stun:stun.l.google.com:19302"]}]
-    mode_label = "STUN Only (No TURN configured)"
-    try:
-        turn_url = st.secrets.get("TURN_SERVER_URL")
-        turn_user = st.secrets.get("TURN_USERNAME")
-        turn_cred = st.secrets.get("TURN_CREDENTIAL")
-        if turn_url:
-            entry = {"urls": [str(turn_url)]}
-            if turn_user:
-                entry["username"] = str(turn_user)
-            if turn_cred:
-                entry["credential"] = str(turn_cred)
-            ice_servers.append(entry)
-            mode_label = "Custom TURN + STUN"
-    except Exception:
-        pass
-    return RTCConfiguration({"iceServers": ice_servers}), mode_label
+    """Builds free Google STUN ICE configuration (no paid TURN service required)."""
+    ice_servers = [
+        {
+            "urls": [
+                "stun:stun.l.google.com:19302",
+                "stun:stun1.l.google.com:19302",
+                "stun:stun2.l.google.com:19302",
+            ]
+        }
+    ]
+    return RTCConfiguration({"iceServers": ice_servers}), "Google STUN (Free)"
 
 
 def get_session_coordinator(registry: PretrainedModelRegistry) -> LiveSessionCoordinator:
