@@ -1002,6 +1002,35 @@ def render_diagnostics_page(
         unsafe_allow_html=True,
     )
 
+    render_html(
+        f"""
+        <div class="aura-surface-card">
+            <div class="aura-section-label">
+                <span>WebRTC &amp; ICE Transport Diagnostics</span>
+                <span class="aura-pill-tag">{html.escape(str(st.session_state.get("webrtc_ice_mode", "STUN Only")))}</span>
+            </div>
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(170px, 1fr)); gap:0.6rem; font-size:0.76rem;">
+                <div style="background:#FAF8F5; border-radius:16px; padding:0.7rem 0.9rem;">
+                    <div style="font-size:0.63rem; font-weight:800; color:#7C778B; text-transform:uppercase;">Peer Playing</div>
+                    <div class="aura-mono" style="font-weight:800; margin-top:0.15rem;">{bool(st.session_state.get("webrtc_playing", False))}</div>
+                </div>
+                <div style="background:#FAF8F5; border-radius:16px; padding:0.7rem 0.9rem;">
+                    <div style="font-size:0.63rem; font-weight:800; color:#7C778B; text-transform:uppercase;">Server Video Frames</div>
+                    <div class="aura-mono" style="font-weight:800; margin-top:0.15rem;">{int(snapshot.get("video_frames_received", 0))}</div>
+                </div>
+                <div style="background:#FAF8F5; border-radius:16px; padding:0.7rem 0.9rem;">
+                    <div style="font-size:0.63rem; font-weight:800; color:#7C778B; text-transform:uppercase;">Server Audio Frames</div>
+                    <div class="aura-mono" style="font-weight:800; margin-top:0.15rem;">{int(snapshot.get("audio_frames_received", 0))}</div>
+                </div>
+                <div style="background:#FAF8F5; border-radius:16px; padding:0.7rem 0.9rem;">
+                    <div style="font-size:0.63rem; font-weight:800; color:#7C778B; text-transform:uppercase;">Last Frame Age (V / A)</div>
+                    <div class="aura-mono" style="font-weight:800; margin-top:0.15rem;">{snapshot.get("last_video_rx_age_s", "—")}s / {snapshot.get("last_audio_rx_age_s", "—")}s</div>
+                </div>
+            </div>
+        </div>
+        """
+    )
+
     if benchmark_data and benchmark_data.get("overall_metrics"):
         ov = benchmark_data["overall_metrics"]
         subgroup_rows = []

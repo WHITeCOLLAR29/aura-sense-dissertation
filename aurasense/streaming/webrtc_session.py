@@ -604,4 +604,6 @@ class LiveSessionCoordinator:
                 "avg_latency_ms": avg_latency_ms,
                 "video_frames_received": v_rx,
                 "audio_frames_received": a_rx,
+                "last_video_rx_age_s": round(now - self._last_video_rx_ts, 1) if self._last_video_rx_ts > 0.0 else None,
+                "last_audio_rx_age_s": round(now - self._last_audio_rx_ts, 1) if self._last_audio_rx_ts > 0.0 else None,
             }

@@ -1,6 +1,6 @@
 # AuraSense — Linux / Streamlit Community Cloud (Python 3.11) Pinned Dependencies
 streamlit==1.41.1
-streamlit-webrtc==0.47.9
+streamlit-webrtc==0.79.1
 opencv-python-headless==4.10.0.84
 insightface==0.7.3
 onnx==1.16.2
