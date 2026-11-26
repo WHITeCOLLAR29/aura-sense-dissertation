@@ -1,0 +1,17 @@
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.streamlit/cache/
+.DS_Store
+*.log
+.env
+.env.*
+*.secrets
+secrets.toml
+data/
+AuraSense_Windows/
+AuraSense_Windows.zip

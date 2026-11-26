@@ -1,0 +1,155 @@
+{
+  "benchmark_name": "FairFace-Indian Held-Out Validation Benchmark (piadev/fairface-indian)",
+  "evaluated_at": "2026-11-26T21:55:59.795281+05:30",
+  "total_sampled_images": 360,
+  "faces_detected_count": 346,
+  "face_detection_rate_pct": 96.11,
+  "evaluation_runtime_sec": 23.22,
+  "overall_metrics": {
+    "n": 346,
+    "buffalo_l_accuracy_pct": 73.7,
+    "fairface_resnet34_accuracy_pct": 91.62,
+    "inter_model_agreement_pct": 74.57,
+    "agreement_65_coverage_pct": 62.14,
+    "agreement_65_accuracy_pct": 95.81,
+    "consensus_coverage_pct": 24.57,
+    "consensus_selective_accuracy_pct": 96.47,
+    "uncertain_abstention_pct": 75.43
+  },
+  "disagreement_caught_error_rate_pct": 100.0,
+  "disagreed_sample_count": 88,
+  "by_presentation_label": {
+    "Female": {
+      "n": 170,
+      "buffalo_l_accuracy_pct": 74.12,
+      "fairface_resnet34_accuracy_pct": 91.76,
+      "inter_model_agreement_pct": 76.47,
+      "agreement_65_coverage_pct": 62.94,
+      "agreement_65_accuracy_pct": 95.33,
+      "consensus_coverage_pct": 26.47,
+      "consensus_selective_accuracy_pct": 97.78,
+      "uncertain_abstention_pct": 73.53
+    },
+    "Male": {
+      "n": 176,
+      "buffalo_l_accuracy_pct": 73.3,
+      "fairface_resnet34_accuracy_pct": 91.48,
+      "inter_model_agreement_pct": 72.73,
+      "agreement_65_coverage_pct": 61.36,
+      "agreement_65_accuracy_pct": 96.3,
+      "consensus_coverage_pct": 22.73,
+      "consensus_selective_accuracy_pct": 95.0,
+      "uncertain_abstention_pct": 77.27
+    }
+  },
+  "by_age_bracket": {
+    "20-25 (Young Adults)": {
+      "n": 1,
+      "buffalo_l_accuracy_pct": 100.0,
+      "fairface_resnet34_accuracy_pct": 100.0,
+      "inter_model_agreement_pct": 100.0,
+      "agreement_65_coverage_pct": 100.0,
+      "agreement_65_accuracy_pct": 100.0,
+      "consensus_coverage_pct": 0.0,
+      "consensus_selective_accuracy_pct": null,
+      "uncertain_abstention_pct": 100.0
+    },
+    "<20 (Youth / Adolescents)": {
+      "n": 176,
+      "buffalo_l_accuracy_pct": 64.2,
+      "fairface_resnet34_accuracy_pct": 87.5,
+      "inter_model_agreement_pct": 65.34,
+      "agreement_65_coverage_pct": 47.73,
+      "agreement_65_accuracy_pct": 92.86,
+      "consensus_coverage_pct": 23.86,
+      "consensus_selective_accuracy_pct": 92.86,
+      "uncertain_abstention_pct": 76.14
+    },
+    ">25 (Adults & Seniors)": {
+      "n": 169,
+      "buffalo_l_accuracy_pct": 83.43,
+      "fairface_resnet34_accuracy_pct": 95.86,
+      "inter_model_agreement_pct": 84.02,
+      "agreement_65_coverage_pct": 76.92,
+      "agreement_65_accuracy_pct": 97.69,
+      "consensus_coverage_pct": 25.44,
+      "consensus_selective_accuracy_pct": 100.0,
+      "uncertain_abstention_pct": 74.56
+    }
+  },
+  "by_skin_tone_luma": {
+    "Darker Tone (L* < 44)": {
+      "n": 219,
+      "buffalo_l_accuracy_pct": 73.97,
+      "fairface_resnet34_accuracy_pct": 92.69,
+      "inter_model_agreement_pct": 76.71,
+      "agreement_65_coverage_pct": 63.01,
+      "agreement_65_accuracy_pct": 96.38,
+      "consensus_coverage_pct": 21.46,
+      "consensus_selective_accuracy_pct": 97.87,
+      "uncertain_abstention_pct": 78.54
+    },
+    "Lighter Tone (L* >= 60)": {
+      "n": 30,
+      "buffalo_l_accuracy_pct": 76.67,
+      "fairface_resnet34_accuracy_pct": 86.67,
+      "inter_model_agreement_pct": 70.0,
+      "agreement_65_coverage_pct": 56.67,
+      "agreement_65_accuracy_pct": 94.12,
+      "consensus_coverage_pct": 26.67,
+      "consensus_selective_accuracy_pct": 87.5,
+      "uncertain_abstention_pct": 73.33
+    },
+    "Medium Tone (44 <= L* < 60)": {
+      "n": 97,
+      "buffalo_l_accuracy_pct": 72.16,
+      "fairface_resnet34_accuracy_pct": 90.72,
+      "inter_model_agreement_pct": 71.13,
+      "agreement_65_coverage_pct": 61.86,
+      "agreement_65_accuracy_pct": 95.0,
+      "consensus_coverage_pct": 30.93,
+      "consensus_selective_accuracy_pct": 96.67,
+      "uncertain_abstention_pct": 69.07
+    }
+  },
+  "by_lighting_condition": {
+    "Balanced Lighting (85-165 luma)": {
+      "n": 196,
+      "buffalo_l_accuracy_pct": 71.43,
+      "fairface_resnet34_accuracy_pct": 90.82,
+      "inter_model_agreement_pct": 70.41,
+      "agreement_65_coverage_pct": 58.67,
+      "agreement_65_accuracy_pct": 94.78,
+      "consensus_coverage_pct": 27.55,
+      "consensus_selective_accuracy_pct": 96.3,
+      "uncertain_abstention_pct": 72.45
+    },
+    "Bright / High-Key Lighting (> 165 luma)": {
+      "n": 4,
+      "buffalo_l_accuracy_pct": 100.0,
+      "fairface_resnet34_accuracy_pct": 75.0,
+      "inter_model_agreement_pct": 75.0,
+      "agreement_65_coverage_pct": 50.0,
+      "agreement_65_accuracy_pct": 100.0,
+      "consensus_coverage_pct": 0.0,
+      "consensus_selective_accuracy_pct": null,
+      "uncertain_abstention_pct": 100.0
+    },
+    "Low / Dim Lighting (< 85 luma)": {
+      "n": 146,
+      "buffalo_l_accuracy_pct": 76.03,
+      "fairface_resnet34_accuracy_pct": 93.15,
+      "inter_model_agreement_pct": 80.14,
+      "agreement_65_coverage_pct": 67.12,
+      "agreement_65_accuracy_pct": 96.94,
+      "consensus_coverage_pct": 21.23,
+      "consensus_selective_accuracy_pct": 96.77,
+      "uncertain_abstention_pct": 78.77
+    }
+  },
+  "documented_limitations": [
+    "Youth / <20 subgroup shows higher inter-model disagreement and lower individual accuracy than adult (>25) faces because pre-adolescent and adolescent facial geometry carries weaker sexually dimorphic cues.",
+    "Low / dim lighting (< 85 luma) and severe motion blur increase single-model misclassifications; AuraSense's pre-inference quality gate and dual-model agreement check abstain with 'Uncertain \u2013 Please adjust camera position' rather than guessing.",
+    "Both InsightFace Buffalo_L and FairFace ResNet34 were trained on binary Male/Female facial appearance annotations and cannot represent non-binary, gender-nonconforming, or personal gender identity."
+  ]
+}
