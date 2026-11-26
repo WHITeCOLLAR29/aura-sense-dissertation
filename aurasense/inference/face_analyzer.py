@@ -461,8 +461,8 @@ class PretrainedFaceAnalyzer:
                 "disclaimer": disclaimer,
             }
 
-        if not m1.get("available") or not m2.get("available"):
-            err_msg = m1.get("error") or m2.get("error") or "Dual-model inference incomplete."
+        if not m1.get("available"):
+            err_msg = m1.get("error") or "InsightFace Buffalo_L inference incomplete."
             return {
                 "available": False,
                 "status": "model_error",
@@ -479,11 +479,46 @@ class PretrainedFaceAnalyzer:
 
         lbl1 = m1["label"]
         conf1 = float(m1["confidence_pct"])
+        m1_confident = conf1 >= self.config.min_buffalo_gender_confidence_pct
+
+        # Single-model primary mode (FairFace optional / disabled to save RAM on Streamlit Cloud)
+        if not m2.get("available"):
+            if not m1_confident:
+                return {
+                    "available": True,
+                    "status": "low_confidence",
+                    "final_label": GENDER_UNCERTAIN_MESSAGE,
+                    "is_uncertain": True,
+                    "models_agree": None,
+                    "agreement_status": "Low Confidence",
+                    "reason": (
+                        f"Buffalo_L leans {lbl1} ({conf1:.1f}%), below the "
+                        f"{self.config.min_buffalo_gender_confidence_pct:.0f}% threshold."
+                    ),
+                    "confidence_pct": None,
+                    "model_1": m1,
+                    "model_2": m2,
+                    "disclaimer": disclaimer,
+                }
+            return {
+                "available": True,
+                "status": "confident_agreement",
+                "final_label": f"{lbl1} (Perceived Presentation)",
+                "short_label": lbl1,
+                "is_uncertain": False,
+                "models_agree": None,
+                "agreement_status": "Buffalo_L Primary",
+                "reason": f"InsightFace Buffalo_L ({conf1:.1f}%) passed quality & confidence gates.",
+                "confidence_pct": round(conf1, 1),
+                "model_1": m1,
+                "model_2": m2,
+                "disclaimer": disclaimer,
+            }
+
         lbl2 = m2["label"]
         conf2 = float(m2["confidence_pct"])
         agree = bool(lbl1 == lbl2)
 
-        m1_confident = conf1 >= self.config.min_buffalo_gender_confidence_pct
         m2_confident = conf2 >= self.config.min_fairface_gender_confidence_pct
 
         if not agree:
@@ -555,10 +590,11 @@ class PretrainedFaceAnalyzer:
             err = self.registry.status().get("buffalo_error") or "InsightFace Buffalo_L unavailable."
             return self._no_face_or_error(status="error", reason=err, t0=t0, error=err)
 
-        ff_model, _ = self.registry.ensure_fairface_loaded()
-        if ff_model is None:
-            err = self.registry.status().get("fairface_error") or "FairFace ResNet34 unavailable."
-            return self._no_face_or_error(status="error", reason=err, t0=t0, error=err)
+        if self.config.enable_fairface_model:
+            ff_model, _ = self.registry.ensure_fairface_loaded()
+            if ff_model is None:
+                err = self.registry.status().get("fairface_error") or "FairFace ResNet34 unavailable."
+                return self._no_face_or_error(status="error", reason=err, t0=t0, error=err)
 
         deepface_ok = self.registry.ensure_deepface_loaded()
 
@@ -681,13 +717,24 @@ class PretrainedFaceAnalyzer:
             qual["issues"] = list(qual["issues"]) + ["Face moving too quickly (hold steady)"]
             qual["quality_score"] = round(float(qual["quality_score"] * 0.55), 3)
 
-        # Execute Model 1 (InsightFace Buffalo_L) & Model 2 (FairFace ResNet34) on the EXACT SAME detected face
+        # Execute Model 1 (InsightFace Buffalo_L) & optional Model 2 (FairFace ResNet34) on the EXACT SAME detected face
         m1_res = self._run_buffalo_gender_on_face(
             best_frame_pack["frame"],
             best_frame_pack["face"],
             buffalo_app,
         )
-        m2_res = self._run_fairface_gender_on_aligned_chip(best_frame_pack["aligned_224"])
+        if self.config.enable_fairface_model:
+            m2_res = self._run_fairface_gender_on_aligned_chip(best_frame_pack["aligned_224"])
+        else:
+            m2_res = {
+                "available": False,
+                "model_name": "FairFace ResNet34",
+                "label": None,
+                "confidence_pct": None,
+                "probabilities": {},
+                "error": "Optional (disabled to save RAM)",
+                "latency_ms": 0.0,
+            }
         dual_gender = self._compute_dual_model_consensus(m1_res, m2_res, qual)
 
         # Finalize 7-class facial emotion distribution

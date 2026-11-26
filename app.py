@@ -44,6 +44,25 @@ st.set_page_config(
 )
 
 
+def _build_rtc_configuration() -> RTCConfiguration:
+    """Builds STUN + optional TURN ICE configuration from `st.secrets`."""
+    ice_servers = [{"urls": ["stun:stun.l.google.com:19302"]}]
+    try:
+        turn_url = st.secrets.get("TURN_SERVER_URL")
+        turn_user = st.secrets.get("TURN_USERNAME")
+        turn_cred = st.secrets.get("TURN_CREDENTIAL")
+        if turn_url:
+            entry = {"urls": [str(turn_url)]}
+            if turn_user:
+                entry["username"] = str(turn_user)
+            if turn_cred:
+                entry["credential"] = str(turn_cred)
+            ice_servers.append(entry)
+    except Exception:
+        pass
+    return RTCConfiguration({"iceServers": ice_servers})
+
+
 def get_session_coordinator(registry: PretrainedModelRegistry) -> LiveSessionCoordinator:
     if "live_coordinator" not in st.session_state:
         st.session_state.live_coordinator = LiveSessionCoordinator(
@@ -226,9 +245,7 @@ def main() -> None:
             key="aurasense-live-session",
             mode=WebRtcMode.SENDRECV,
             desired_playing_state=st.session_state.desired_playing,
-            rtc_configuration=RTCConfiguration(
-                {"iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]}
-            ),
+            rtc_configuration=_build_rtc_configuration(),
             media_stream_constraints={
                 "video": {
                     "width": {"ideal": 640},

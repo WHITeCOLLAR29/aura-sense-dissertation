@@ -168,6 +168,7 @@ class LiveInferenceConfig:
 
     # Pretrained Model Identifiers
     insightface_pack_name: str = "buffalo_l"
+    enable_fairface_model: bool = False  # Optional; disabled by default to save RAM on Streamlit Cloud
     fairface_repo_id: str = "wmpscc/StyleGene"
     fairface_filename: str = "res34_fair_align_multi_7_20190809.pt"
     voice_emotion_model_id: str = "Dpngtm/wav2vec2-emotion-recognition"
