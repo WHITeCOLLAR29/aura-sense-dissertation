@@ -12,11 +12,18 @@ Highest-Priority Feature:
 """
 
 import os
+from pathlib import Path
 
 os.environ.setdefault("TF_CPP_MIN_LOG_LEVEL", "3")
 
+from dotenv import load_dotenv
+import requests
 import streamlit as st
 from streamlit_webrtc import RTCConfiguration, WebRtcMode, webrtc_streamer
+
+_ROOT_DIR = Path(__file__).resolve().parent
+load_dotenv(_ROOT_DIR / ".env")
+load_dotenv(_ROOT_DIR / "aurasense" / ".env")
 
 from aurasense.config import PASTEL_PALETTES
 from aurasense.evaluation import load_cached_indian_benchmark
@@ -45,9 +52,63 @@ st.set_page_config(
 )
 
 
+def _get_config_value(key: str) -> str | None:
+    """Reads a config value from environment (.env) first, then Streamlit `st.secrets`."""
+    val = os.getenv(key)
+    if val:
+        return str(val).strip()
+    try:
+        sec = st.secrets.get(key)
+        if sec:
+            return str(sec).strip()
+    except Exception:
+        pass
+    return None
+
+
+@st.cache_data(ttl=3000, show_spinner=False)
+def _fetch_metered_ice_servers(key_id: str, signing_secret: str, app_name: str) -> list[dict]:
+    """
+    Fetches temporary Metered TURN credentials & ICE servers server-side.
+    Never exposes `signing_secret` to browser-side JavaScript.
+    """
+    base = f"https://{app_name}.metered.live"
+    # 1. Create a short-lived TURN credential using the backend secretKey
+    cred_resp = requests.post(
+        f"{base}/api/v1/turn/credential",
+        params={"secretKey": signing_secret},
+        json={"expiryInSeconds": 3600, "label": "aurasense-live"},
+        timeout=8,
+    )
+    if cred_resp.ok:
+        cred_data = cred_resp.json()
+        api_key = cred_data.get("apiKey") or key_id
+        ice_resp = requests.get(
+            f"{base}/api/v1/turn/credentials",
+            params={"apiKey": api_key},
+            timeout=8,
+        )
+        if ice_resp.ok:
+            servers = ice_resp.json()
+            if isinstance(servers, list) and servers:
+                return servers
+
+    # 2. Fallback: fetch ICE servers directly using key_id as credential apiKey
+    direct_resp = requests.get(
+        f"{base}/api/v1/turn/credentials",
+        params={"apiKey": key_id},
+        timeout=8,
+    )
+    direct_resp.raise_for_status()
+    servers = direct_resp.json()
+    if not isinstance(servers, list) or not servers:
+        raise ValueError("Metered returned an empty ICE server list.")
+    return servers
+
+
 def _build_rtc_configuration() -> tuple[RTCConfiguration, str]:
-    """Builds free Google STUN ICE configuration (no paid TURN service required)."""
-    ice_servers = [
+    """Builds ICE configuration using Metered TURN (when configured) + Google STUN."""
+    stun_servers = [
         {
             "urls": [
                 "stun:stun.l.google.com:19302",
@@ -56,7 +117,21 @@ def _build_rtc_configuration() -> tuple[RTCConfiguration, str]:
             ]
         }
     ]
-    return RTCConfiguration({"iceServers": ice_servers}), "Google STUN (Free)"
+    key_id = _get_config_value("METERED_KEY_ID")
+    signing_secret = _get_config_value("METERED_SIGNING_SECRET")
+    app_name = _get_config_value("METERED_APP_NAME") or "global"
+
+    if key_id and signing_secret:
+        try:
+            metered_servers = _fetch_metered_ice_servers(key_id, signing_secret, app_name)
+            st.session_state["webrtc_turn_error"] = None
+            return RTCConfiguration({"iceServers": metered_servers + stun_servers}), "Metered TURN + Google STUN"
+        except Exception as exc:
+            st.session_state["webrtc_turn_error"] = f"Metered TURN auth failed: {type(exc).__name__}"
+    else:
+        st.session_state["webrtc_turn_error"] = None
+
+    return RTCConfiguration({"iceServers": stun_servers}), "Google STUN Only (No Metered Credentials)"
 
 
 def get_session_coordinator(registry: PretrainedModelRegistry) -> LiveSessionCoordinator:

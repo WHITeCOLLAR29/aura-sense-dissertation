@@ -1026,6 +1026,10 @@ def render_diagnostics_page(
                     <div style="font-size:0.63rem; font-weight:800; color:#7C778B; text-transform:uppercase;">Last Frame Age (V / A)</div>
                     <div class="aura-mono" style="font-weight:800; margin-top:0.15rem;">{snapshot.get("last_video_rx_age_s", "—")}s / {snapshot.get("last_audio_rx_age_s", "—")}s</div>
                 </div>
+                <div style="background:#FAF8F5; border-radius:16px; padding:0.7rem 0.9rem;">
+                    <div style="font-size:0.63rem; font-weight:800; color:#7C778B; text-transform:uppercase;">TURN Auth Status</div>
+                    <div class="aura-mono" style="font-weight:800; margin-top:0.15rem;">{html.escape(str(st.session_state.get("webrtc_turn_error") or "OK"))}</div>
+                </div>
             </div>
         </div>
         """
