@@ -4,6 +4,7 @@ Provides facial analysis (DeepFace + RetinaFace), vocal analysis (Wav2Vec2 AutoP
 and configurable multimodal emotion fusion with temporal stabilization.
 """
 
+from .clip_inspector import analyze_uploaded_clip
 from .face_analyzer import PretrainedFaceAnalyzer
 from .fusion import (
     FusionRuntimeSettings,

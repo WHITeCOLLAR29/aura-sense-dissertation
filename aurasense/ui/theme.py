@@ -1101,3 +1101,99 @@ def render_diagnostics_page(
             """,
             unsafe_allow_html=True,
         )
+
+
+def render_clip_inspector_results(clip_res: Dict[str, Any], theme: Dict[str, str]) -> None:
+    """Renders Clip Inspector summary cards and per-segment emotion timeline."""
+    if not clip_res.get("available"):
+        render_html(
+            f"""
+            <div class="aura-error-banner">
+                <strong>⚠️ Clip Analysis Error:</strong> {html.escape(str(clip_res.get("error") or "Unknown error"))}
+            </div>
+            """
+        )
+        return
+
+    conf_str = (
+        f"{float(clip_res['avg_confidence_pct']):.1f}%"
+        if clip_res.get("avg_confidence_pct") is not None
+        else "—"
+    )
+    multi_note = " · Multiple faces seen (primary analyzed)" if clip_res.get("multiple_faces_seen") else ""
+    audio_note = "Audio track present" if clip_res.get("has_audio_track") else "No audio track (facial-only)"
+
+    render_html(
+        f"""
+        <div class="aura-hero-gender-card">
+            <div class="aura-section-label">
+                <span>🎞️ Clip Inspector Summary · {html.escape(str(clip_res.get("filename", "")))}</span>
+                <span class="aura-mono" style="font-size:0.7rem; color:{theme['accent']};">
+                    {clip_res.get('duration_sec', 0.0):.1f}s · {clip_res.get('segments_analyzed', 0)} segments · {audio_note}{multi_note}
+                </span>
+            </div>
+            <div class="aura-grid-2" style="display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:0.75rem; margin-bottom:0.75rem;">
+                <div style="background:rgba(255,255,255,0.9); border-radius:20px; padding:0.9rem 1rem;">
+                    <div style="font-size:0.65rem; font-weight:800; text-transform:uppercase; color:#68637A;">Estimated Facial Presentation</div>
+                    <div style="font-size:1.1rem; font-weight:800; color:#2B2836; margin-top:0.25rem;">{html.escape(str(clip_res.get("overall_facial_presentation", "Uncertain")))}</div>
+                </div>
+                <div style="background:rgba(255,255,255,0.9); border-radius:20px; padding:0.9rem 1rem;">
+                    <div style="font-size:0.65rem; font-weight:800; text-transform:uppercase; color:#68637A;">Combined Expressed Emotion</div>
+                    <div style="font-size:1.1rem; font-weight:800; color:{theme['accent']}; margin-top:0.25rem;">{html.escape(str(clip_res.get("overall_combined_emotion", "Insufficient data")))} <span class="aura-mono" style="font-size:0.8rem;">({conf_str})</span></div>
+                </div>
+            </div>
+            <div class="aura-grid-2" style="display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:0.75rem;">
+                <div style="background:rgba(255,255,255,0.85); border-radius:18px; padding:0.75rem 1rem;">
+                    <div style="font-size:0.64rem; font-weight:800; text-transform:uppercase; color:#68637A;">Facial Emotion</div>
+                    <div style="font-size:0.98rem; font-weight:800; color:#2B2836;">{html.escape(str(clip_res.get("overall_facial_emotion", "—")))}</div>
+                </div>
+                <div style="background:rgba(255,255,255,0.85); border-radius:18px; padding:0.75rem 1rem;">
+                    <div style="font-size:0.64rem; font-weight:800; text-transform:uppercase; color:#68637A;">Vocal Emotion</div>
+                    <div style="font-size:0.98rem; font-weight:800; color:#2B2836;">{html.escape(str(clip_res.get("overall_vocal_emotion", "—")))}</div>
+                </div>
+            </div>
+        </div>
+        """
+    )
+
+    rows = []
+    for seg in clip_res.get("timeline") or []:
+        c_pct = f"{float(seg['confidence_pct']):.1f}%" if seg.get("confidence_pct") is not None else "—"
+        rows.append(
+            f"""
+            <tr style="border-bottom:1px solid rgba(43,40,54,0.06);">
+                <td class="aura-mono" style="padding:0.5rem;">{float(seg['timestamp_sec']):.1f}s</td>
+                <td style="padding:0.5rem; font-weight:700;">{html.escape(str(seg['facial_emotion']))}</td>
+                <td style="padding:0.5rem; font-weight:700;">{html.escape(str(seg['vocal_emotion']))}</td>
+                <td style="padding:0.5rem; font-weight:800; color:{theme['accent']};">{html.escape(str(seg['combined_emotion']))}</td>
+                <td class="aura-mono" style="padding:0.5rem;">{c_pct}</td>
+                <td style="padding:0.5rem; font-size:0.72rem; color:#5E5A6E;">{html.escape(str(seg['facial_presentation']))}</td>
+            </tr>
+            """
+        )
+
+    render_html(
+        f"""
+        <div class="aura-surface-card">
+            <div class="aura-section-label">
+                <span>Emotion &amp; Presentation Timeline</span>
+                <span class="aura-mono" style="font-size:0.68rem; color:#68637A;">Processed in {clip_res.get('processing_time_sec', 0.0):.2f}s</span>
+            </div>
+            <div style="overflow-x:auto;">
+                <table style="width:100%; border-collapse:collapse; text-align:left; font-size:0.78rem;">
+                    <thead>
+                        <tr style="border-bottom:2px solid rgba(43,40,54,0.08); font-size:0.66rem; text-transform:uppercase; color:#68637A;">
+                            <th style="padding:0.5rem;">Time</th>
+                            <th style="padding:0.5rem;">Facial</th>
+                            <th style="padding:0.5rem;">Vocal</th>
+                            <th style="padding:0.5rem;">Combined</th>
+                            <th style="padding:0.5rem;">Score</th>
+                            <th style="padding:0.5rem;">Facial Presentation</th>
+                        </tr>
+                    </thead>
+                    <tbody>{"".join(rows)}</tbody>
+                </table>
+            </div>
+        </div>
+        """
+    )

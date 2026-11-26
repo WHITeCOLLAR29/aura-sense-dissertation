@@ -20,12 +20,13 @@ from streamlit_webrtc import RTCConfiguration, WebRtcMode, webrtc_streamer
 
 from aurasense.config import PASTEL_PALETTES
 from aurasense.evaluation import load_cached_indian_benchmark
-from aurasense.inference import PretrainedModelRegistry, get_cached_model_registry
+from aurasense.inference import PretrainedModelRegistry, analyze_uploaded_clip, get_cached_model_registry
 from aurasense.streaming import LiveSessionCoordinator
 from aurasense.ui import (
     inject_base_css,
     inject_dynamic_palette_tokens,
     render_camera_tracking_bar,
+    render_clip_inspector_results,
     render_diagnostics_page,
     render_emotion_probability_bars,
     render_header,
@@ -98,14 +99,44 @@ def main() -> None:
         is_paused=coordinator.is_paused,
     )
 
-    nav_col, _ = st.columns([5.2, 6.8])
+    nav_col, _ = st.columns([6.5, 5.5])
     with nav_col:
         active_view = st.radio(
             label="AuraSense View",
-            options=["📷 Live Analysis", "🩺 Diagnostics & Indian Benchmark"],
+            options=["📷 Live Analysis", "🎞️ Clip Inspector", "🩺 Diagnostics & Indian Benchmark"],
             horizontal=True,
             label_visibility="collapsed",
         )
+
+    if active_view == "🎞️ Clip Inspector":
+        inject_dynamic_palette_tokens(init_theme)
+        st.markdown("### 🎞️ Clip Inspector")
+        st.caption("Upload an MP4, MOV, or WEBM clip to analyze facial presentation, facial emotion, vocal emotion, and multimodal fusion across sampled segments.")
+        c1, c2, c3 = st.columns([2.2, 1.0, 1.0])
+        with c1:
+            uploaded_clip = st.file_uploader(
+                "Upload Video Clip (MP4, MOV, WEBM)",
+                type=["mp4", "mov", "webm"],
+                accept_multiple_files=False,
+            )
+        with c2:
+            clip_interval = st.slider("Sample Interval (sec)", min_value=1.0, max_value=3.0, value=1.5, step=0.5)
+        with c3:
+            clip_max_dur = st.slider("Max Duration (sec)", min_value=10, max_value=90, value=45, step=5)
+
+        if uploaded_clip is not None:
+            if st.button("🔍 Analyze Uploaded Clip", type="primary"):
+                with st.spinner("Analyzing sampled video frames and 16 kHz audio segments..."):
+                    clip_res = analyze_uploaded_clip(
+                        file_bytes=uploaded_clip.getvalue(),
+                        filename=uploaded_clip.name,
+                        registry=registry,
+                        config=registry.config,
+                        sample_interval_sec=float(clip_interval),
+                        max_duration_sec=float(clip_max_dur),
+                    )
+                render_clip_inspector_results(clip_res, init_theme)
+        return
 
     if active_view == "🩺 Diagnostics & Indian Benchmark":
         benchmark_data = load_cached_indian_benchmark()
