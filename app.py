@@ -318,8 +318,7 @@ def main() -> None:
             st.session_state.desired_playing = None
         elif playing_now:
             coordinator.mark_session_started()
-            if st.session_state.desired_playing is False:
-                st.session_state.desired_playing = True
+            st.session_state.desired_playing = True
         st.session_state["webrtc_playing"] = playing_now
 
         cam_opt1, cam_opt2 = st.columns(2)
@@ -345,7 +344,7 @@ def main() -> None:
             render_camera_tracking_bar(
                 snapshot=snap,
                 theme=cur_theme,
-                is_streaming=playing_now,
+                is_streaming=bool(playing_now or snap.get("camera_connected") or snap.get("microphone_connected")),
             )
 
         live_camera_status_fragment()
@@ -362,18 +361,19 @@ def main() -> None:
 
             inject_dynamic_palette_tokens(cur_theme)
 
+            live_active = bool(playing_now or snap.get("camera_connected") or snap.get("microphone_connected"))
             # TOP PROMINENT HERO: Dual-Model Facial Gender Presentation (Buffalo_L + FairFace ResNet34)
             render_prominent_facial_gender_card(
                 snapshot=snap,
                 theme=cur_theme,
-                is_streaming=playing_now,
+                is_streaming=live_active,
             )
 
             # Live Emotion Analysis (Facial, Vocal, Combined)
             render_three_emotion_cards(
                 snapshot=snap,
                 theme=cur_theme,
-                is_streaming=playing_now,
+                is_streaming=live_active,
             )
 
             # 7-Emotion Score Distribution Bars
@@ -387,7 +387,7 @@ def main() -> None:
                 snapshot=snap,
                 model_status=registry.status(),
                 theme=cur_theme,
-                is_streaming=playing_now,
+                is_streaming=live_active,
             )
 
         live_analysis_fragment()

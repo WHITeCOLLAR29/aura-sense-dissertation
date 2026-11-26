@@ -487,28 +487,37 @@ class LiveSessionCoordinator:
 
         with self._state_lock:
             res = self._latest_result
-            cam_connected = bool(
-                webrtc_playing and self._last_video_rx_ts > 0.0 and (now - self._last_video_rx_ts < 3.5)
-            )
-            mic_connected = bool(
-                webrtc_playing and self._last_audio_rx_ts > 0.0 and (now - self._last_audio_rx_ts < 3.5)
-            )
+            # Treat camera/mic as connected if frames are actively arriving, even before a full Streamlit rerun
+            vid_fresh = bool(self._last_video_rx_ts > 0.0 and (now - self._last_video_rx_ts < 3.5))
+            aud_fresh = bool(self._last_audio_rx_ts > 0.0 and (now - self._last_audio_rx_ts < 3.5))
+            cam_connected = bool(vid_fresh and (webrtc_playing or desired_playing is True or v_rx > 0))
+            mic_connected = bool(aud_fresh and (webrtc_playing or desired_playing is True or a_rx > 0))
+            stream_active = bool(webrtc_playing or cam_connected or mic_connected)
 
-            # Detect missing/unavailable hardware or denied permissions
+            # Detect missing/unavailable hardware, connecting state, or denied permissions
             device_alert: Optional[str] = None
-            if desired_playing is True and not webrtc_playing:
-                device_alert = (
-                    "Waiting for browser camera/microphone permission. If you denied permission or "
-                    "a device is unavailable, grant access in your browser address bar or use 'Select Camera / Mic'."
-                )
-            elif webrtc_playing and self._session_started_ts > 0.0 and (now - self._session_started_ts > 3.5):
+            elapsed_since_start = (now - self._session_started_ts) if self._session_started_ts > 0.0 else 0.0
+            if desired_playing is True and not stream_active:
+                if elapsed_since_start > 10.0:
+                    device_alert = (
+                        "Connection Failed — WebRTC did not receive camera/microphone frames. "
+                        "Check browser permissions, firewall/TURN settings, or click 'Select Camera / Mic'."
+                    )
+                elif elapsed_since_start > 2.0:
+                    device_alert = (
+                        "Camera Permission Required — Allow camera & microphone access in your browser "
+                        "(or click 'Start Analysis' inside the video box)."
+                    )
+                else:
+                    device_alert = "Connecting to camera and microphone..."
+            elif stream_active and self._session_started_ts > 0.0 and elapsed_since_start > 3.5:
                 if not cam_connected and mic_connected:
                     device_alert = "Webcam stream unavailable — continuing in vocal-only live mode."
                 elif cam_connected and not mic_connected:
                     device_alert = "Microphone stream unavailable — continuing in facial-only live mode."
                 elif not cam_connected and not mic_connected:
                     device_alert = (
-                        "Stream interrupted or camera/microphone unavailable. Check device connection or click Reset Session."
+                        "Connection Failed or stream interrupted. Check device connection or click Reset Session."
                     )
 
             df_face_ok = bool(
@@ -522,8 +531,16 @@ class LiveSessionCoordinator:
             )
 
             f_diag = (res or {}).get("face_analysis", {}).get("diagnostics") or {}
-            if not webrtc_playing:
-                tracking_status = "Camera Standby"
+            if not stream_active:
+                if desired_playing is True:
+                    if elapsed_since_start > 10.0:
+                        tracking_status = "Connection Failed"
+                    elif elapsed_since_start > 2.0:
+                        tracking_status = "Camera Permission Required"
+                    else:
+                        tracking_status = "Connecting..."
+                else:
+                    tracking_status = "Camera Standby"
             elif not cam_connected:
                 tracking_status = "Webcam Unavailable"
             elif self.is_paused:
