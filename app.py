@@ -126,6 +126,9 @@ def _build_rtc_configuration() -> tuple[RTCConfiguration, str]:
             metered_servers = _fetch_metered_ice_servers(key_id, signing_secret, app_name)
             st.session_state["webrtc_turn_error"] = None
             return RTCConfiguration({"iceServers": metered_servers + stun_servers}), "Metered TURN + Google STUN"
+        except requests.HTTPError as exc:
+            code = exc.response.status_code if exc.response is not None else "?"
+            st.session_state["webrtc_turn_error"] = f"Metered HTTP {code} (check METERED_APP_NAME / keys)"
         except Exception as exc:
             st.session_state["webrtc_turn_error"] = f"Metered TURN auth failed: {type(exc).__name__}"
     else:
